@@ -1,4 +1,8 @@
 const {coordKey} = require("./utils")
+
+function createCell(terrain = undefined, height = undefined) {
+  return { terrain, height };
+}
 function createMap() {
   //map stored as flat hash map by key "x,y". bounds tracks grid required to contain the terrain
   return {
@@ -11,6 +15,40 @@ function getCell(map, x, y) {
   // returns value of position, or undefined if that cell empty
   //0,0 center point
   return map.cells.get(coordKey(x, y));
+}
+
+function getCellTerrain(cell) {
+  if (cell === undefined) return undefined;
+  if (typeof cell === "string") return cell;
+  return cell.terrain;
+}
+
+function getCellHeight(cell) {
+  if (cell === undefined) return undefined;
+  if (typeof cell === "string") return undefined;
+  return cell.height;
+}
+
+function setCellTerrain(map, x, y, terrain) {
+  const existing = getCell(map, x, y);
+  const nextCell =
+    existing === undefined || typeof existing === "string"
+      ? createCell(terrain)
+      : { ...existing, terrain };
+
+  return setCell(map, x, y, nextCell);
+}
+
+function setCellHeight(map, x, y, height) {
+  const existing = getCell(map, x, y);
+  const nextCell =
+    existing === undefined
+      ? createCell(undefined, height)
+      : typeof existing === "string"
+      ? createCell(existing, height)
+      : { ...existing, height };
+
+  return setCell(map, x, y, nextCell);
 }
 
 function setCell(map, x, y, value) {
@@ -29,4 +67,13 @@ function setCell(map, x, y, value) {
   return true;
 }
 
-module.exports = {setCell, getCell, createMap}
+module.exports = {
+  setCell,
+  getCell,
+  createMap,
+  createCell,
+  getCellTerrain,
+  getCellHeight,
+  setCellTerrain,
+  setCellHeight,
+}

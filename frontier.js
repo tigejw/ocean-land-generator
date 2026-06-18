@@ -1,4 +1,4 @@
-const { getCell } = require("./map");
+const { getCell, getCellTerrain } = require("./map");
 const { coordKey, parseCoordKey } = require("./utils");
 
 const neighbourOffsets = [
@@ -19,8 +19,9 @@ function getNeighbourTerrainCounts(map, { x, y }) {
   neighbourOffsets.forEach((offset) => {
     const neighbour = getCell(map, x + offset.x, y + offset.y);
 
-    if (neighbour === "1") landCount += 1;
-    if (neighbour === "0") oceanCount += 1;
+    const terrain = getCellTerrain(neighbour);
+    if (terrain === "1") landCount += 1;
+    if (terrain === "0") oceanCount += 1;
   });
 
   return { landCount, oceanCount };

@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { getCell } = require("./map");
+const { getCell, getCellTerrain } = require("./map");
 const mapOutputFile = "./map.md";
 
 
@@ -15,7 +15,7 @@ function renderMapMarkdown(map) {
     for (let x = minX; x <= maxX; x++) {
       const cell = getCell(map, x, y);
       if (cell === undefined) row.push(" ");
-      else if (cell === "1") row.push("■");
+      else if (getCellTerrain(cell) === "1") row.push("■");
       else row.push("□");
     }
     lines.push(row.join(" "));
@@ -35,7 +35,7 @@ function printMap(map) {
     for (let x = minX; x <= maxX; x++) {
       const cell = getCell(map, x, y);
       if (cell === undefined) row.push("□");
-      else if (cell === "1") row.push("■");
+      else if (getCellTerrain(cell) === "1") row.push("■");
       else row.push("▤");
     }
     console.log(row.join(" "));
