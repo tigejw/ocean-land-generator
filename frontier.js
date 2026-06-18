@@ -1,0 +1,117 @@
+const { getCell } = require("./map");
+const { coordKey, parseCoordKey } = require("./utils");
+
+const neighbourOffsets = [
+  { x: -1, y: -1 },
+  { x: 0, y: -1 },
+  { x: 1, y: -1 },
+  { x: -1, y: 0 },
+  { x: 1, y: 0 },
+  { x: -1, y: 1 },
+  { x: 0, y: 1 },
+  { x: 1, y: 1 },
+];
+
+function getNeighbourTerrainCounts(map, { x, y }) {
+  let landCount = 0;
+  let oceanCount = 0;
+
+  neighbourOffsets.forEach((offset) => {
+    const neighbour = getCell(map, x + offset.x, y + offset.y);
+
+    if (neighbour === "1") landCount += 1;
+    if (neighbour === "0") oceanCount += 1;
+  });
+
+  return { landCount, oceanCount };
+}
+
+function chooseTerrainFromNeighbours(map, point) {
+  const { landCount, oceanCount } = getNeighbourTerrainCounts(map, point);
+  const landWeight = landCount + 1;
+  const oceanWeight = oceanCount + 1;
+  const totalWeight = landWeight + oceanWeight;
+
+  return Math.random() < landWeight / totalWeight ? "1" : "0";
+}
+
+function checkNeighbours(map, { x, y }, minValidNeighbours = 2) {
+  let neighbourCount = 0;
+
+  neighbourOffsets.forEach((offset) => {
+    const neighbour = getCell(map, x + offset.x, y + offset.y);
+    if (neighbour !== undefined) neighbourCount += 1;
+  });
+
+  return neighbourCount >= minValidNeighbours;
+}
+
+function getDistanceToCenter(_map, { x, y }) {
+  return Math.sqrt(x * x + y * y);
+}
+
+function getFrontier(map) {
+  const frontier = new Set();
+
+  map.cells.forEach((_value, key) => {
+    const { x, y } = parseCoordKey(key);
+
+    neighbourOffsets.forEach((offset) => {
+      const neighbourX = x + offset.x;
+      const neighbourY = y + offset.y;
+
+      if (
+        getCell(map, neighbourX, neighbourY) === undefined &&
+        checkNeighbours(map, { x: neighbourX, y: neighbourY }, 2)
+      ) {
+        frontier.add(coordKey(neighbourX, neighbourY));
+      }
+    });
+  });
+
+  return frontier;
+}
+
+function addFrontierAroundPoint(map, frontier, { x, y }) {
+  neighbourOffsets.forEach((offset) => {
+    const neighbourX = x + offset.x;
+    const neighbourY = y + offset.y;
+
+    if (
+      getCell(map, neighbourX, neighbourY) === undefined &&
+      checkNeighbours(map, { x: neighbourX, y: neighbourY }, 2)
+    ) {
+      frontier.add(coordKey(neighbourX, neighbourY));
+    }
+  });
+}
+
+function selectFrontierPoint(map, frontier) {
+  let selectedPoint = null;
+
+  frontier.forEach((key) => {
+    const point = parseCoordKey(key);
+    const distance = getDistanceToCenter(map, point);
+    const adjustedDistance = distance * (1 + Math.random() * 20);
+
+    if (
+      selectedPoint === null ||
+      adjustedDistance < selectedPoint.adjustedDistance
+    ) {
+      selectedPoint = { ...point, adjustedDistance };
+    }
+  });
+
+  return selectedPoint;
+}
+
+module.exports = {
+  neighbourOffsets,
+  getNeighbourTerrainCounts,
+  chooseTerrainFromNeighbours,
+  checkNeighbours,
+  getDistanceToCenter,
+  getFrontier,
+  addFrontierAroundPoint,
+  selectFrontierPoint,
+};
