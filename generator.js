@@ -1,4 +1,77 @@
+const fs = require("fs");
+
+const mapOutputFile = "./map.md";
+
+
+
+
+
+
+function getNeighbourTerrainCounts(map, { x, y }) {
+  //count number of ocean/land in surrounding 8
+  const neighbourOffsets = [
+    { x: -1, y: -1 },
+    { x: 0, y: -1 },
+    { x: 1, y: -1 },
+    { x: -1, y: 0 },
+    { x: 1, y: 0 },
+    { x: -1, y: 1 },
+    { x: 0, y: 1 },
+    { x: 1, y: 1 },
+  ];
+
+  let landCount = 0;
+  let oceanCount = 0;
+
+  neighbourOffsets.forEach((offset) => {
+    const neighbour = getPoint(map, x + offset.x, y + offset.y);
+
+    if (neighbour === "1") {
+      landCount += 1;
+    }
+
+    if (neighbour === "0") {
+      oceanCount += 1;
+    }
+  });
+
+  return { landCount, oceanCount };
+}
+
+function chooseTerrainFromNeighbours(map, point) {
+  //choses whether to assign land/ocean based upon surrounding 8
+  const { landCount, oceanCount } = getNeighbourTerrainCounts(map, point);
+  const landWeight = landCount + 1;
+  const oceanWeight = oceanCount + 1;
+  const totalWeight = landWeight + oceanWeight;
+
+  return Math.random() < landWeight / totalWeight ? "1" : "0";
+}
+
+function renderMapMarkdown(map) {
+  //render map as text for printing/display
+
+  const lines = [];
+  for (let yIndex = map.length - 1; yIndex >= 0; yIndex--) {
+    const displayRow = map[yIndex].map((grid) => {
+      if (grid === "") return " ";
+      if (grid === "1") return "■";
+      if (grid === "0") return "□";
+      return "□";
+    });
+//□
+    lines.push(displayRow.join(" "));
+  }
+
+  return `${lines.join("\n")}`;
+}
+
+function writeMapToMarkdown(map, filePath = mapOutputFile) {
+  fs.writeFileSync(filePath, renderMapMarkdown(map));
+}
+
 function createMap(width, height) {
+  //create blank map using nested arrays
   const blank = [];
 
   for (let yIndex = 0; yIndex < height; yIndex++) {
@@ -15,6 +88,7 @@ function createMap(width, height) {
 }
 
 function printMap(map) {
+  //print map to console
   for (let yIndex = map.length - 1; yIndex >= 0; yIndex--) {
     const displayRow = map[yIndex].map((grid) => {
       if (grid === "") return "□";
@@ -69,6 +143,7 @@ function checkNeighbours(map, { x, y }, minValidNeighbours = 2) {
 }
 
 function getMapDimensions(map) {
+  //return map size
   return {
     width: map[0]?.length ?? 0,
     height: map.length,
@@ -76,6 +151,7 @@ function getMapDimensions(map) {
 }
 
 function getCenterPoint(map) {
+  //finds center point of map
   const { width, height } = getMapDimensions(map);
 
   return {
@@ -85,6 +161,7 @@ function getCenterPoint(map) {
 }
 
 function getDistanceToCenter(map, { x, y }) {
+  //calculate distance of coords to center of map
   const center = getCenterPoint(map);
   const deltaX = x - center.x;
   const deltaY = y - center.y;
@@ -93,15 +170,18 @@ function getDistanceToCenter(map, { x, y }) {
 }
 
 function coordKey(x, y) {
+  //format coords as string for storage 
   return `${x},${y}`;
 }
 
 function parseCoordKey(key) {
+  //parse coords string to numbers
   const [x, y] = key.split(",").map(Number);
   return { x, y };
 }
 
 function getFrontier(map) {
+  //const frontier set for entire map (empty spaces touching existing land/ocean)
   const frontier = new Set();
   const { width, height } = getMapDimensions(map);
 
@@ -119,6 +199,7 @@ function getFrontier(map) {
 }
 
 function addFrontierAroundPoint(map, frontier, { x, y }) {
+  //when updating frontier to ocean/land update surrounding empty cells to frontier set
   const neighbourOffsets = [
     { x: -1, y: -1 },
     { x: 0, y: -1 },
@@ -141,6 +222,7 @@ function addFrontierAroundPoint(map, frontier, { x, y }) {
 }
 
 function selectFrontierPoint(map, frontier) {
+  //select frontier point to create new cell
   let selectedPoint = null;
 
   frontier.forEach((key) => {
@@ -160,6 +242,7 @@ function selectFrontierPoint(map, frontier) {
 }
 
 function growTerrain(map, activeX, activeY, frontier = null) {
+  //grows terrain (land/ocean) by 1 cell
   if (getPoint(map, activeX, activeY) === "") {
     setPoint(map, activeX, activeY, "1");
   }
@@ -172,12 +255,13 @@ function growTerrain(map, activeX, activeY, frontier = null) {
     return { map, activeLocation, frontier: frontierState };
   }
 
-  const value = Math.random() < 0.5 ? "1" : "0";
+  const value = chooseTerrainFromNeighbours(map, selectedPoint);
   setPoint(map, selectedPoint.x, selectedPoint.y, value);
   frontierState.delete(coordKey(selectedPoint.x, selectedPoint.y));
   addFrontierAroundPoint(map, frontierState, selectedPoint);
 
-  printMap(map);
+  writeMapToMarkdown(map);
+  // printMap(map);
 
   return {
     map,
@@ -185,8 +269,6 @@ function growTerrain(map, activeX, activeY, frontier = null) {
     frontier: frontierState,
   };
 }
-
-
 
 function growTerrainSteps(map, activeX, activeY, step = 0, maxSteps = 400, frontier = null) {
   //repeat growTerrain to limit
@@ -223,7 +305,8 @@ function growTerrainSteps(map, activeX, activeY, step = 0, maxSteps = 400, front
       maxSteps,
       result.frontier,
     );
-  }, 100)
+  }, 50)
+  //^update for speed
 }
 
 const map = createMap(30, 30);
@@ -240,6 +323,8 @@ module.exports = {
   setPoint,
   checkNeighbours,
   getFrontier,
+  chooseTerrainFromNeighbours,
+  writeMapToMarkdown,
   growTerrain,
   growTerrainSteps,
 };
