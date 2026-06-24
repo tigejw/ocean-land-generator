@@ -13,6 +13,7 @@ const neighbourOffsets = [
 ];
 
 function getNeighbourTerrainCounts(map, { x, y }) {
+  //return the number of land and ocean cells in the 8 neighbouring cells
   let landCount = 0;
   let oceanCount = 0;
 
@@ -29,6 +30,11 @@ function getNeighbourTerrainCounts(map, { x, y }) {
 
 function chooseTerrainFromNeighbours(map, point) {
   const { landCount, oceanCount } = getNeighbourTerrainCounts(map, point);
+
+  // strong majority of neighbours ensures new cell is same terrain type as neighbours
+  if (landCount >= 6) return "1";
+  if (oceanCount >= 6) return "0";
+
   const landWeight = landCount + 1;
   const oceanWeight = oceanCount + 1;
   const totalWeight = landWeight + oceanWeight;

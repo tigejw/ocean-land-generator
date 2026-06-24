@@ -6,7 +6,7 @@ const {
   addFrontierAroundPoint,
   selectFrontierPoint,
 } = require("./frontier");
-const { writeMapToMarkdown } = require("./printing");
+const { writeMapToMarkdown, writeMapToHTML} = require("./printing");
 
 const {coordKey} = require("./utils")
 
@@ -48,8 +48,7 @@ function growTerrain(map, activeX, activeY, frontier = null) {
   frontierState.delete(coordKey(selectedPoint.x, selectedPoint.y));
   addFrontierAroundPoint(map, frontierState, selectedPoint);
 
-  writeMapToMarkdown(map);
-  // printMap(map);
+writeMapToHTML(map);
 
   return {
     map,

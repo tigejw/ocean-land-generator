@@ -5,7 +5,7 @@ const { growTerrainSteps} = require("./terrain")
 
 
 const map = createMap();
-setCell(map, 0, 1, { terrain: "1", height: 1 }); // second seed point
+setCell(map, 0, 1, { terrain: "0", height: 0 }); // ocean seed point
 
 const result = growTerrainSteps(map, 0, 0, 0, 2400);
 
